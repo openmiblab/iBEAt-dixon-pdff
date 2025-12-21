@@ -13,19 +13,22 @@ from miblab_dl import fatwater
 
 
 def run(build, cache=None):
-    compute(build, 'Controls', cache=cache)
-    for site in ['Exeter', 'Leeds', 'Bari', 'Bordeaux', 'Sheffield', 'Turku']:
-        compute(build, 'Patients', site=site, cache=cache)
+    for site in ['Leeds', 'Exeter', 'Bari', 'Bordeaux', 'Sheffield', 'Turku']:
+        run_site(build, 'Patients', site=site, cache=cache)
+    run_site(build, 'Controls', cache=cache)
 
-def compute(build, group, site=None, cache=None):
+def run_site(build, group, site=None, cache=None):
+
+    input = 'stage_5_clean_dixon_data'
+    output = 'stage_1_fat_fraction_maps'
 
     # Define site paths
     if group == 'Controls':
-        datapath = os.path.join(build, 'dixon', 'stage_5_clean_dixon_data', group) 
-        resultspath = os.path.join(build, 'dixon-pdff', 'stage_2_fat_fraction_maps', group)
+        datapath = os.path.join(build, 'dixon', input, group) 
+        resultspath = os.path.join(build, 'dixon-pdff', output, group)
     else:
-        datapath = os.path.join(build, 'dixon', 'stage_5_clean_dixon_data', group, site)
-        resultspath = os.path.join(build, 'dixon-pdff', 'stage_2_fat_fraction_maps', group, site)
+        datapath = os.path.join(build, 'dixon', input, group, site)
+        resultspath = os.path.join(build, 'dixon-pdff', output, group, site)
     os.makedirs(resultspath, exist_ok=True)
 
     # Get all out_phase series
@@ -35,25 +38,20 @@ def compute(build, group, site=None, cache=None):
     # List existing series so they can be skipped in the loop
     existing_series = db.series(resultspath)
 
-    # TODO: This requires a selected PREcontrast series
-    # # List of selected dixon series
-    # src = os.path.dirname(os.path.abspath(__file__))
-    # record = utils.data.dixon_record(src)
-
     # Loop over the out_phase series
     for series_op in tqdm(series_out_phase, desc='Computing fat-water maps'):
 
-        # Patient and study IDs
+        # Identifiers
         patient = series_op[1]
         study = series_op[2][0]
+        sequence = series_op[3][0][:-10] # remove "_out_phase"
 
-        # Remove '_out_phase' suffix from series description
-        sequence = series_op[3][0][:-10] 
+        # Skip post-contrast series
+        if 'post_contrast' in sequence:
+            continue
 
-        # # Skip if it is not the right sequence
-        # selected_sequence = utils.data.dixon_series_desc(record, patient, study)
-        # if sequence != selected_sequence:
-        #     continue
+        # Get in_phase series
+        series_ip = series_op[:3] + [(f'{sequence}_in_phase', 0)]
 
         # Define output series
         fat_series = [resultspath, patient, (study, 0), (f'{sequence}_fat', 0)]
@@ -63,9 +61,6 @@ def compute(build, group, site=None, cache=None):
         # Skip if the output already exists
         if pdff_series in existing_series:
             continue
-
-        # Get in_phase series
-        series_ip = series_op[:3] + [(f'{sequence}_in_phase', 0)]
 
         # Read the in-phase and opposed-phase data
         try:
@@ -80,7 +75,7 @@ def compute(build, group, site=None, cache=None):
             pars_op = db.unique(['EchoTime', 'FlipAngle', 'RepetitionTime'], series_op)
             pars_ip = db.unique(['EchoTime', 'FlipAngle', 'RepetitionTime'], series_ip)
         except:
-            logging.exception(f"Patient {patient} - error reading echo times for {sequence}")
+            logging.exception(f"Patient {patient} - error reading parameters for {sequence}")
             continue     
 
         # Compute fat and water images with T2* and T1 correction
@@ -126,7 +121,7 @@ if __name__=='__main__':
     os.makedirs(pdff_build, exist_ok=True)
 
     logging.basicConfig(
-        filename=os.path.join(pdff_build, 'stage_2_fat_fraction_maps.log'),
+        filename=os.path.join(pdff_build, 'stage_1_fat_fraction_maps.log'),
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s'
     )

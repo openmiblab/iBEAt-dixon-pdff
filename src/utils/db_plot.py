@@ -4,7 +4,7 @@ import numpy as np
 import dbdicom as db
 
 
-def db_mosaic(series_to_display, pngfile, title="Center slices"):
+def db_mosaic(series_to_display, pngfile, title="Center slices", vmin=None, vmax=None):
 
     # Build list of center slices
     center_slices = []
@@ -12,6 +12,11 @@ def db_mosaic(series_to_display, pngfile, title="Center slices"):
         vol = db.volume(series, verbose=0)
         center_slice = vol.values[:,:,round(vol.shape[-1]/2)]
         center_slices.append(center_slice)
+
+    if vmin is None:
+        vmin = 0
+    if vmax is None:
+        vmax = np.max([np.mean(s) + 2 * np.std(s) for s in center_slices])
 
     # Display center slices as mosaic
     n_imgs = len(center_slices)
@@ -27,11 +32,11 @@ def db_mosaic(series_to_display, pngfile, title="Center slices"):
     i=0
     for row in tqdm(ax, desc='Building png'):
         if nrows==1:
-            _db_moisaic_tile(row, center_slices, series_to_display, i)
+            _db_moisaic_tile(row, center_slices, series_to_display, i, vmin, vmax)
             i += 1 
         else:
             for col in row:
-                _db_moisaic_tile(col, center_slices, series_to_display, i)
+                _db_moisaic_tile(col, center_slices, series_to_display, i, vmin, vmax)
                 i += 1 
 
     fig.suptitle(title, fontsize=14)
@@ -39,7 +44,7 @@ def db_mosaic(series_to_display, pngfile, title="Center slices"):
     plt.close()
 
 
-def _db_moisaic_tile(col, center_slices, series_to_display, i):
+def _db_moisaic_tile(col, center_slices, series_to_display, i, vmin, vmax):
 
     col.set_xticklabels([])
     col.set_yticklabels([])
@@ -53,8 +58,8 @@ def _db_moisaic_tile(col, center_slices, series_to_display, i):
             center_slices[i].T, 
             cmap='gray', 
             interpolation='none', 
-            vmin=0, 
-            vmax=np.mean(center_slices[i]) + 2 * np.std(center_slices[i])
+            vmin=vmin, 
+            vmax=vmax,
         )
         # Add white text with black background in upper-left corner
         patient_id = series_to_display[i][1]
