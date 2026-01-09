@@ -2,10 +2,11 @@ import argparse
 import os
 import logging
 
-import stage_1_fat_fraction_maps
-import stage_2_check_pdff
+# import stage_1_fat_fraction_maps
+# import stage_2_check_pdff
 import stage_3_align_masks
 import stage_4_check_alignment
+import stage_5_measure_kidneys
 
 
 if __name__=='__main__':
@@ -27,5 +28,6 @@ if __name__=='__main__':
 
     # stage_1_fat_fraction_maps.run(args.build)
     # stage_2_check_pdff.run(args.build)
-    stage_3_align_masks.run(args.build)
-    stage_4_check_alignment.run(args.build)
+    # stage_3_align_masks.run(args.build)
+    # stage_4_check_alignment.run(args.build)
+    stage_5_measure_kidneys.run(args.build)

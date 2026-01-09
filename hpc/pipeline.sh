@@ -37,49 +37,22 @@ module load Anaconda3/2024.02-1
 module load Python/3.10.8-GCCcore-12.2.0 # essential to load latest GCC
 module load CUDA/11.8.0 # must match with version in environment.yml
 
-# Initialize Conda for this non-interactive shell
-eval "$(conda shell.bash hook)"
-
-# Activates your Conda environment named venv.
-# (Older clusters use source activate; newer Conda versions use conda activate venv.)
-# We assume that the conda environment has already been created
-conda activate dixon
-
 # Get the current username
 USERNAME=$(whoami)
 
 # Define path variables here
-BUILD="/mnt/parscratch/users/$USERNAME/iBEAt_Build/dixon"
+ENV="/mnt/parscratch/users/$USERNAME/envs/pdff"
+CODE="/mnt/parscratch/users/$USERNAME/scripts/iBEAt-dixon-pdff/src"
+BUILD="/mnt/parscratch/users/$USERNAME/data/iBEAt_Build"
+ARCHIVE="/shared/abdominal_imaging/Archive/iBEAt_Build"
 
-# Define a cache memory path explicitly so the default HOME dir is not used
-# as this has limited space. This is to save model weights persistently
-# and is also used for temporary storage of intermediate nifti files.
-CACHE="/mnt/parscratch/users/$USERNAME/miblab-dl"
+# Initialize Conda for this non-interactive shell
+# eval "$(conda shell.bash hook)"
 
-# Absolute path to the conda env you want to use (adjust if different)
-ENV="/users/$USERNAME/.conda/envs/dixon"
-
-# Prepend the environment's bin to PATH so subprocesses find CLI tools installed in the env
-export PATH="$ENV/bin:$PATH"
-
-# Ensure python can find installed site-packages (helpful if PYTHONPATH not set)
-export PYTHONPATH="$ENV/lib/python3.10/site-packages:${PYTHONPATH:-}"
-
-# Set CONDA_PREFIX so code that expects it can still work
-export CONDA_PREFIX="$ENV"
-
-export nnUNet_n_proc_DA=8 # Typically half the number of requested CPUs
-
-# Diagnostics (will show in job output)
-echo "---- Environment diagnostics (on compute node) ----"
-echo "Using ENV: $ENV"
-echo "Which python: $(which python || echo 'python not on PATH')"
-echo "Explicit python: $ENV/bin/python"
-echo "nnUNetv2_predict found at: $(which nnUNetv2_predict || echo 'NOT FOUND')"
-echo "nnUNetv2_apply_postprocessing found at: $(which nnUNetv2_apply_postprocessing || echo 'NOT FOUND')"
-echo "CONDA_PREFIX: $CONDA_PREFIX"
-echo "LD_LIBRARY_PATH (start): ${LD_LIBRARY_PATH:-<empty>}"
-echo "-----------------------------------------------"
+# Activates your Conda environment named venv.
+# (Older clusters use source activate; newer Conda versions use conda activate venv.)
+# We assume that the conda environment has already been created
+# conda activate "$ENV"
 
 # srun runs your program on the allocated compute resources managed by Slurm
-srun "$ENV/bin/python" "$BUILD/iBEAt-dixon/src/stage_4_compute_fatwater.py" --build="$BUILD" --cache="$CACHE"
+srun "$ENV/bin/python" "$CODE/pipeline.py" --build="$BUILD"
