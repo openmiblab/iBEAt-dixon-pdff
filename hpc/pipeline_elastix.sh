@@ -14,16 +14,24 @@ export SLURM_EXPORT_ENV=ALL
 
 module load Anaconda3/2024.02-1
 module load Python/3.10.8-GCCcore-12.2.0 # essential to load latest GCC
-module load CUDA/11.8.0 # must match with version in environment.yml
 
 # Get the current username
 USERNAME=$(whoami)
 
 # Define path variables here
-ENV="/mnt/parscratch/users/$USERNAME/envs/pdff"
+ENV="/mnt/parscratch/users/$USERNAME/envs/elastix"
 CODE="/mnt/parscratch/users/$USERNAME/scripts/iBEAt-dixon-pdff/src"
 BUILD="/mnt/parscratch/users/$USERNAME/data/iBEAt_Build"
+ARCHIVE="/shared/abdominal_imaging/Archive/iBEAt_Build"
 
+# Initialize Conda for this non-interactive shell
+# eval "$(conda shell.bash hook)"
+
+# Activates your Conda environment named venv.
+# (Older clusters use source activate; newer Conda versions use conda activate venv.)
+# We assume that the conda environment has already been created
+# conda activate "$ENV"
 
 # srun runs your program on the allocated compute resources managed by Slurm
-srun "$ENV/bin/python" "$CODE/pipeline.py" --build="$BUILD"
+srun "$ENV/bin/python" "$CODE/stage_3_align_masks.py" --build="$BUILD"
+srun "$ENV/bin/python" "$CODE/stage_4_check_alignment.py" --build="$BUILD"

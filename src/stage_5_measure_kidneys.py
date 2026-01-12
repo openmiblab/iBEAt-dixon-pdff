@@ -1,8 +1,6 @@
 import os
 import logging
-import shutil
 from pathlib import Path
-from datetime import date
 import argparse
 
 from tqdm import tqdm
@@ -89,7 +87,8 @@ def _compute_roi_vals(mask_bool, fat_arr, wat_arr, pdff_vol, patient, study, seq
     
     try:
         roi_vol = vreg.volume(mask, pdff_vol.affine)
-        results = radiomics.texture_features(roi_vol, pdff_vol, roi, 'dixon_pdff', binWidth=0.001)
+        results = radiomics.firstorder_features(roi_vol, pdff_vol, roi, 'dixon_pdff', binWidth=0.001)
+        results = results | radiomics.texture_features(roi_vol, pdff_vol, roi, 'dixon_pdff', binWidth=0.001)
     except:
         logging.exception(f"Patient {patient}, Study {study}, Sequence {sequence} - error computing {roi}")
         return

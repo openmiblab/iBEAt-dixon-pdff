@@ -77,6 +77,8 @@ def run_site(build, group, site=None):
             series_total_mr = mask_study + [(f'{sequence}_total_mr', 0)]
             series_tissue_types_mr = mask_study + [(f'{sequence}_tissue_types_mr', 0)]
             series_pdff = pdff_study + [(f'{sequence}_pdff', 0)]
+
+            logging.info(f"{patient_id}_{study_desc}_{sequence}: building mosaics")
             
             # Read mask volume
             vol_pdff = db.volume(series_pdff, verbose=0)
@@ -98,8 +100,10 @@ def run_site(build, group, site=None):
             rois = {roi: (vol_tissue_types_mr.values==idx).astype(np.int16) for idx, roi in tissue_types_mr_class_map.items()}
             mosaic_overlay(vol_pdff.values, rois, tissue_types_mr_png, vmin=0, vmax=0.3, opacity=0.7)
 
+            logging.info(f"{patient_id}_{study_desc}_{sequence}: successfully created mosaics")
+
         except:
-            logging.exception(f"{patient_id}_{study_desc}_{sequence}: error building mosaic")
+            logging.exception(f"{patient_id}_{study_desc}_{sequence}: error building mosaics")
 
 
 if __name__=='__main__':

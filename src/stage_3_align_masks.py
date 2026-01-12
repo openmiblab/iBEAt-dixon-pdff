@@ -43,6 +43,8 @@ def run_site(build, group, site=None):
 
     os.makedirs(coreg_db, exist_ok=True)
 
+    logging.info(f"Aligning masks: reading DICOM data for group {group} and site {site}.")
+
     # Get all precontrast water series in the source database
     all_source_series = db.series(dixon_data)
     all_water_series = [s for s in all_source_series if s[3][0][-5:]=='water']
@@ -100,6 +102,8 @@ def run_site(build, group, site=None):
                 db.copy(moving_series_total_mr, coreg_series_total_mr)
                 db.copy(moving_series_tissue_types_mr, coreg_series_tissue_types_mr)
                 continue
+
+            logging.info(f"Aligning masks for {fixed_series_water}")
             
             # Coregister fixed and moving water volumes
             fixed_vol_water = db.volume(fixed_series_water, verbose=0)
@@ -131,9 +135,11 @@ def run_site(build, group, site=None):
             db.write_volume((coreg_values_total_mr, fixed_vol_water.affine), coreg_series_total_mr, ref=moving_series_total_mr, verbose=0)
             db.write_volume((coreg_values_tissue_types_mr, fixed_vol_water.affine), coreg_series_tissue_types_mr, ref=moving_series_tissue_types_mr, verbose=0)
 
+            logging.info(f"Successfully aligned masks for {fixed_series_water}")
+
         except:
 
-            logging.exception(f"Error aligning {fixed_series_water}")
+            logging.exception(f"Error aligning masks for {fixed_series_water}")
 
 
 
